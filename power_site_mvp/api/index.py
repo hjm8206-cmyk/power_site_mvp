@@ -1,6 +1,14 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
+import sys
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+REPO_DIR = ROOT_DIR.parent
+for path in (ROOT_DIR, REPO_DIR):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
 
 DEPLOYED_VWORLD_DOMAIN = "https://power-site-mvp-72ay.vercel.app"
 
@@ -52,7 +60,10 @@ runtime_vworld_domain = _runtime_vworld_domain()
 if runtime_vworld_domain:
     os.environ["VWORLD_DOMAIN"] = runtime_vworld_domain
 
-from app.main import app
+try:
+    from app.main import app
+except ModuleNotFoundError:
+    from power_site_mvp.app.main import app
 
 
 @app.middleware("http")
