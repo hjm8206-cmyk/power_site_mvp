@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import os
-from typing import Callable
+from typing import Callable, Optional
 
 from . import vworld
 
 
 DEPLOYED_VWORLD_DOMAIN = "https://power-site-mvp-72ay.vercel.app"
 _PATCHED = False
-_ORIGINAL_SERVICE_DOMAIN: Callable[[], str] | None = None
+_ORIGINAL_SERVICE_DOMAIN: Optional[Callable[[], str]] = None
 
 
 def patch() -> None:
