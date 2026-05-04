@@ -50,7 +50,8 @@
     if (main?.polygon?.length) {
       state.mainParcelPolygon = createParcelPolygon(main, colors.mainParcel, "#bbf7d0", 0.32);
       kakao.maps.event.addListener(state.mainParcelPolygon, "click", () => {
-        if (isMapMarkingModeActive()) return;
+        preventMapClickBubble();
+        if (state.towerMode || state.roadMode) return;
         renderParcelFocus(main);
       });
     }
@@ -65,11 +66,18 @@
       if (!polygon) return;
       state.adjacentParcelPolygons.set(String(parcel.id), polygon);
       kakao.maps.event.addListener(polygon, "click", () => {
-        if (isMapMarkingModeActive()) return;
+        preventMapClickBubble();
+        if (state.towerMode || state.roadMode) return;
         toggleParcelSelection(parcel);
       });
     });
   };
+
+  function preventMapClickBubble() {
+    if (window.kakao?.maps?.event?.preventMap) {
+      kakao.maps.event.preventMap();
+    }
+  }
 
   function manualParcelIds(group) {
     return [
@@ -117,5 +125,6 @@
     syncParcelSelectionStatus(parcel.id, parcel.selection_status, parcel.road_connection_contribution, parcel.is_incorporation_candidate);
     updateParcelStyles();
     refreshScore();
+    renderParcelFocus(parcel);
   };
 })();
