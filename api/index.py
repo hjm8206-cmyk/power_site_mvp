@@ -6,6 +6,8 @@ ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+DEPLOYED_VWORLD_DOMAIN = "https://power-site-mvp-72ay.vercel.app"
+
 
 def _with_https_scheme(url: str) -> str:
     value = str(url or "").strip().rstrip("/")
@@ -29,9 +31,21 @@ def _request_origin(request) -> str:
     return _with_https_scheme(f"{proto}://{host}")
 
 
-vercel_domain = os.getenv("VERCEL_PROJECT_PRODUCTION_URL") or os.getenv("VERCEL_URL") or os.getenv("APP_PUBLIC_URL")
-if vercel_domain and (not os.getenv("VWORLD_DOMAIN") or _is_local_domain(os.getenv("VWORLD_DOMAIN", ""))):
-    os.environ["VWORLD_DOMAIN"] = _with_https_scheme(vercel_domain)
+def _runtime_vworld_domain() -> str:
+    if os.getenv("VERCEL", "").strip():
+        return _with_https_scheme(os.getenv("APP_PUBLIC_URL") or DEPLOYED_VWORLD_DOMAIN)
+    return _with_https_scheme(
+        os.getenv("VWORLD_DOMAIN")
+        or os.getenv("APP_PUBLIC_URL")
+        or os.getenv("VERCEL_PROJECT_PRODUCTION_URL")
+        or os.getenv("VERCEL_URL")
+        or ""
+    )
+
+
+runtime_vworld_domain = _runtime_vworld_domain()
+if runtime_vworld_domain:
+    os.environ["VWORLD_DOMAIN"] = runtime_vworld_domain
 
 from power_site_mvp.app.main import app
 
@@ -39,9 +53,9 @@ from power_site_mvp.app.main import app
 @app.middleware("http")
 async def bind_vworld_domain_to_request_host(request, call_next):
     # VWorld validates each data request against the registered service URL.
-    # Bind to the actual deployed host whenever the request is not local, even
-    # if a stale VWORLD_DOMAIN such as localhost remains in Vercel env vars.
-    origin = _request_origin(request)
-    if origin and not _is_local_domain(origin):
-        os.environ["VWORLD_DOMAIN"] = origin
+    # On Vercel, always use the registered production service URL instead of
+    # any stale localhost value that may remain in environment variables.
+    runtime_domain = _runtime_vworld_domain()
+    if runtime_domain and (os.getenv("VERCEL", "").strip() or _is_local_domain(os.getenv("VWORLD_DOMAIN", ""))):
+        os.environ["VWORLD_DOMAIN"] = runtime_domain
     return await call_next(request)
