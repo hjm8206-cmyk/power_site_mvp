@@ -15,11 +15,5 @@
       "source": "/:path*",
       "destination": "/api/index"
     }
-  ],
-  "functions": {
-    "api/index.py": {
-      "includeFiles": "app/**,templates/**,static/**,data/**",
-      "excludeFiles": "{.packages/**,reports/**,private_data/**,backups/**,tests/**,**/__pycache__/**,*.log,*.pid}"
-    }
-  }
+  ]
 }
