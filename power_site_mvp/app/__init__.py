@@ -1,0 +1,1 @@
+"""PowerSite MVP application package."""

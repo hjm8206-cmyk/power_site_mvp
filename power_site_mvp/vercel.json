@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "buildCommand": "npm run build",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.py"
+    }
+  ],
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "app/**,templates/**,static/**,data/**",
+      "excludeFiles": "{.packages/**,reports/**,private_data/**,backups/**,tests/**,**/__pycache__/**,*.log,*.pid}"
+    }
+  }
+}
