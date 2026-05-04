@@ -79,6 +79,17 @@
     }
   }
 
+  function bindParcelClick(polygon, parcel) {
+    if (!polygon || polygon.__parcelSelectionFixBound) return;
+    polygon.__parcelSelectionFixBound = true;
+    kakao.maps.event.addListener(polygon, "click", () => {
+      if (!state.manualParcelMode) return;
+      preventMapClickBubble();
+      if (state.towerMode || state.roadMode) return;
+      toggleParcelSelection(parcel);
+    });
+  }
+
   function manualParcelIds(group) {
     return [
       ...new Set([
@@ -123,6 +134,7 @@
     if (!parcel) return;
     selectManualParcelByRole(parcel);
     syncParcelSelectionStatus(parcel.id, parcel.selection_status, parcel.road_connection_contribution, parcel.is_incorporation_candidate);
+    bindParcelClick(state.adjacentParcelPolygons.get(String(parcel.id)), parcel);
     updateParcelStyles();
     refreshScore();
     renderParcelFocus(parcel);
