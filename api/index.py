@@ -39,10 +39,9 @@ from power_site_mvp.app.main import app
 @app.middleware("http")
 async def bind_vworld_domain_to_request_host(request, call_next):
     # VWorld validates each data request against the registered service URL.
-    # Bind the API domain to the actual deployment host so parcel polygons and
-    # parcel areas do not fall back to 0 when a stale localhost env remains.
-    if os.getenv("VERCEL"):
-        origin = _request_origin(request)
-        if origin:
-            os.environ["VWORLD_DOMAIN"] = origin
+    # Bind to the actual deployed host whenever the request is not local, even
+    # if a stale VWORLD_DOMAIN such as localhost remains in Vercel env vars.
+    origin = _request_origin(request)
+    if origin and not _is_local_domain(origin):
+        os.environ["VWORLD_DOMAIN"] = origin
     return await call_next(request)
