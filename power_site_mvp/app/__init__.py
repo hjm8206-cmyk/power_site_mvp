@@ -5,10 +5,6 @@ try:
 
     _vworld_domain_patch.patch()
 
-    from . import vworld_retry_patch as _vworld_retry_patch
-
-    _vworld_retry_patch.patch()
-
     from . import parcel_resolver as _parcel_resolver
 
     _parcel_resolver.patch()
