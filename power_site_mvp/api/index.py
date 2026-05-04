@@ -53,13 +53,6 @@ if runtime_vworld_domain:
     os.environ["VWORLD_DOMAIN"] = runtime_vworld_domain
 
 from app.main import app
-from app import parcel_resolver as _parcel_resolver
-from app import vworld_domain_patch as _vworld_domain_patch
-from app import vworld_retry_patch as _vworld_retry_patch
-
-_vworld_domain_patch.patch()
-_vworld_retry_patch.patch()
-_parcel_resolver.patch()
 
 
 @app.middleware("http")
