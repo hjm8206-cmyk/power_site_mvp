@@ -5,6 +5,9 @@ import sys
 ROOT_DIR = Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+APP_DIR = ROOT_DIR / "power_site_mvp"
+if APP_DIR.exists() and str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
 
 DEPLOYED_VWORLD_DOMAIN = "https://power-site-mvp-72ay.vercel.app"
 
@@ -56,7 +59,10 @@ runtime_vworld_domain = _runtime_vworld_domain()
 if runtime_vworld_domain:
     os.environ["VWORLD_DOMAIN"] = runtime_vworld_domain
 
-from power_site_mvp.app.main import app
+try:
+    from power_site_mvp.app.main import app
+except ModuleNotFoundError:
+    from app.main import app
 
 
 @app.middleware("http")
