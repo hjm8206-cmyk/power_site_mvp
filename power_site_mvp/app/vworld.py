@@ -28,6 +28,18 @@ def debug_enabled() -> bool:
     return os.getenv("DEBUG_VWORLD", "").strip().lower() in {"1", "true", "yes", "on"}
 
 
+def service_domain() -> str:
+    explicit = os.getenv("VWORLD_DOMAIN", "").strip()
+    if explicit:
+        return _with_https_scheme(explicit)
+
+    public_url = os.getenv("APP_PUBLIC_URL", "").strip()
+    if public_url:
+        return _with_https_scheme(public_url)
+
+    return DEFAULT_DOMAIN
+
+
 def service_ids() -> Dict[str, Any]:
     return {
         "parcel": os.getenv("VWORLD_PARCEL_SERVICE_ID", "LP_PA_CBND_BUBUN"),
@@ -83,12 +95,13 @@ def query_vworld_data_layer(
     if not geom_filter:
         return {"ok": False, "data_id": data_id, "features": [], "message": "bbox, point, geom 중 하나가 필요합니다."}
 
+    active_domain = service_domain()
     params = {
         "service": "data",
         "request": "GetFeature",
         "data": data_id,
         "key": api_key,
-        "domain": os.getenv("VWORLD_DOMAIN", DEFAULT_DOMAIN),
+        "domain": active_domain,
         "format": "json",
         "crs": "EPSG:4326",
         "geomFilter": geom_filter,
@@ -106,8 +119,9 @@ def query_vworld_data_layer(
             "ok": bool(features),
             "data_id": data_id,
             "features": features,
-            "message": "" if features else _response_message(payload),
+            "message": "" if features else _vworld_message_with_domain(_response_message(payload), active_domain),
             "geom_filter": geom_filter,
+            "service_domain": active_domain,
         }
         if debug_enabled():
             result["raw_response"] = _debug_payload(payload)
@@ -117,15 +131,26 @@ def query_vworld_data_layer(
             "ok": False,
             "data_id": data_id,
             "features": [],
-            "message": f"VWorld 데이터 API 호출 실패({data_id}): {exc}",
+            "message": f"VWorld 데이퀰 api 호출 실패({data_id}, service_url={active_domain}): {exc}",
+            "service_domain": active_domain,
         }
     except Exception as exc:
         return {
             "ok": False,
             "data_id": data_id,
             "features": [],
-            "message": f"VWorld 응답 파싱 실패({data_id}), 수동확인 필요: {exc}",
+            "message": f"VWorld 응답 파싱 실패({data_id}, service_url={active_domain}), 수동확인 필요: {exc}",
+            "service_domain": active_domain,
         }
+
+
+def _with_https_scheme(url: str) -> str:
+    value = str(url or "").strip().rstrip("/")
+    if not value:
+        return DEFAULT_DOMAIN
+    if value.startswith(("http://", "https://")):
+        return value
+    return f"https://{value}"
 
 
 def get_parcel_by_point(lat: float, lng: float) -> Dict[str, Any]:
@@ -458,6 +483,13 @@ def _response_message(payload: Any) -> str:
         return str(error["text"])
     status = response.get("status")
     return f"조회 결과 없음(status={status}), 수동확인 필요"
+
+
+def _vworld_message_with_domain(message: str, domain: str) -> str:
+    text = str(message or "조회 결과 없음, 수동확인 필요")
+    if "인증키" in text or "API KEY" in text.upper() or "INVALID" in text.upper():
+        return f"{text} 현재 VWorld service_url={domain} 입니다. VWorld 콘솔의 서비스 URL과 Vercel 환경변수 VWORLD_DOMAIN을 확인하세요."
+    return text
 
 
 def _largest_polygon(geojson: Optional[Dict[str, Any]]) -> List[Dict[str, float]]:
